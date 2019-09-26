@@ -1,6 +1,5 @@
-package nQueensProblem.src;
-
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.Optional;
 import javafx.application.Application;
 import javafx.collections.ObservableList;
@@ -10,6 +9,7 @@ import javafx.scene.control.Menu;
 import javafx.scene.control.MenuBar;
 import javafx.scene.control.MenuItem;
 import javafx.scene.effect.ColorAdjust;
+import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.control.Alert.AlertType;
 import javafx.scene.layout.Border;
@@ -18,20 +18,23 @@ import javafx.scene.layout.BorderStrokeStyle;
 import javafx.scene.layout.BorderWidths;
 import javafx.scene.layout.CornerRadii;
 import javafx.scene.layout.GridPane;
+import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
+import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
 import javafx.stage.Stage;
-import robertHelperFunctions.QuickAlert;
 
-public class Main extends Application {
+public class nQueensProblem extends Application {
 	private int boardSize = 0;
 	GridPane boardGridPane;
 	ArrayList<int[]> queensStack = new ArrayList<int[]>();
 	int numQueens = 0;
 	int squareSize = 50;
+	
+	Menu menuCompletionTime = new Menu("Completion time (seconds):");
 	
 	public static void main(String[] args) {
 		Application.launch(args);
@@ -47,10 +50,11 @@ public class Main extends Application {
 		menuSetN.addEventHandler(Menu.ON_SHOWING, event -> menuItemSetN.fire());
 		
 		menuItemSetN.setOnAction(e -> {
-			Optional<String> result = QuickAlert.showNumericalInput("Container width:", "Set board size", boardSize + "");
+			@SuppressWarnings("serial")
+			Optional<Number[]> result = QuickAlert.showNumericalInput("Set board size", "Set",  new LinkedHashMap<String, Number>() {{put("Board size:    ", boardSize);}}, primaryStage.getIcons().get(0));
 			
-			if(result.isPresent() && !result.get().equals("")) {
-				int newSize = Integer.parseInt(result.get());
+			if(result.isPresent() && result.get()[0] != null) {
+				int newSize = result.get()[0].intValue();
 				if(newSize <= 13 && newSize >= 0) {
 					boardSize = newSize;
 				} else {
@@ -66,7 +70,15 @@ public class Main extends Application {
 		Menu menuPlaceQueens = new Menu("Place queens");
 		menuPlaceQueens.getItems().addAll(menuItemPlaceQueens);
 		menuPlaceQueens.addEventHandler(Menu.ON_SHOWN, event -> menuPlaceQueens.hide());
-		menuPlaceQueens.addEventHandler(Menu.ON_SHOWING, event -> placeQueens());
+		menuPlaceQueens.addEventHandler(Menu.ON_SHOWING, event -> {
+			long start = System.nanoTime();
+			
+			placeQueens();
+			
+			long end = System.nanoTime();
+			
+			menuCompletionTime.setText("Completion time (seconds): " + ((double) (end - start)) / 1000000000);
+		});
 		
 		MenuItem menuItemSetSquareSize = new MenuItem();
 		
@@ -76,22 +88,37 @@ public class Main extends Application {
 		menuSetSquareSize.addEventHandler(Menu.ON_SHOWING, event -> menuItemSetSquareSize.fire());
 		
 		menuItemSetSquareSize.setOnAction(e -> {
-			Optional<String> result = QuickAlert.showNumericalInput("Square size in pixels:", "Set square size", squareSize + "");
+			@SuppressWarnings("serial")
+			Optional<Number[]> result = QuickAlert.showNumericalInput("Set square size", "Set", new LinkedHashMap<String, Number>() {{put("Square size in pixels:", squareSize);}}, primaryStage.getIcons().get(0));
 			
-			if(result.isPresent() && !result.get().equals("")) {
-				squareSize = Integer.parseInt(result.get());
+			if(result.isPresent() && result.get()[0] != null) {
+				squareSize = result.get()[0].intValue();
 			}
 			
 			generateBoard();
 		});
 		
-		MenuBar menuBar = new MenuBar(menuSetN, menuPlaceQueens, menuSetSquareSize);
+		MenuBar menuBarLeft = new MenuBar(menuSetN, menuPlaceQueens, menuSetSquareSize);
+		
+		Region spacer = new Region();
+		spacer.getStyleClass().add("menu-bar");
+		HBox.setHgrow(spacer, Priority.SOMETIMES);
+		
+		MenuItem menuItemCompletionTime = new MenuItem();
+		
+		menuCompletionTime.getItems().addAll(menuItemCompletionTime);
+		menuCompletionTime.addEventHandler(Menu.ON_SHOWN, event -> menuCompletionTime.hide());
+		menuCompletionTime.addEventHandler(Menu.ON_SHOWING, event -> {});
+		
+		MenuBar menuBarRight = new MenuBar(menuCompletionTime);
+		
+		HBox menuBarHBox = new HBox(menuBarLeft, spacer, menuBarRight);
 		
 		boardGridPane = new GridPane();
 		
 		StackPane mainStackPane = new StackPane(boardGridPane);
 		
-		VBox mainVBox = new VBox(menuBar, mainStackPane);
+		VBox mainVBox = new VBox(menuBarHBox, mainStackPane);
 		VBox.setVgrow(mainStackPane, Priority.ALWAYS);
 		
 		Scene scene = new Scene(mainVBox);
@@ -101,6 +128,7 @@ public class Main extends Application {
 		primaryStage.setScene(scene);
 		primaryStage.setMaximized(true);
 		primaryStage.setTitle("n-Queen Problem");
+		primaryStage.getIcons().add(new Image(getClass().getResource("/icon.png").toString()));
 		primaryStage.show();
 	}
 	
@@ -167,7 +195,7 @@ public class Main extends Application {
 	private void addQueen(int x, int y) {
 		queensStack.add(new int[] {x, y});
 		
-		ImageView queen = new ImageView("/nQueensProblem/resources/queen.png");
+		ImageView queen = new ImageView(getClass().getResource("/queen.png").toString());
 		queen.setFitWidth(squareSize - 2);
 		queen.setFitHeight(squareSize - 2);
 		
